@@ -1,0 +1,10 @@
+% Rrng functions
+autoload('rand', 'Rrng.oct');
+autoload('randn', 'Rrng.oct');
+autoload('rande', 'Rrng.oct');
+autoload('randg', 'Rrng.oct');
+autoload('setseed', 'Rrng.oct');
+autoload('getseed', 'Rrng.oct');
+
+% utility functions
+autoload('identity', 'utils.oct');
