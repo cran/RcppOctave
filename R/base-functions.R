@@ -106,15 +106,22 @@ o_addpath <- function(DIR1, ..., OPTION='-begin'){
 #' 
 #' Returns the version of Octave currently used by \code{RcppOctave}.
 #' 
-#' @return Octave version as a single character string
+#' @param version optional reference version to compare with.
+#' @return Octave version as a single character string or the result of 
+#' \code{\link[utils]{compareVersion}} if argument \code{version} is provided.
 #' 
 #' @export
+#' @importFrom utils compareVersion
 #' @examples
 #' 
 #' o_version()
+#' o_version("3.6.2")
+#' o_version("3.4")
 #' 
-o_version <- function(){
-	.CallOctave('version')
+o_version <- function(version){
+	v <- .CallOctave('version')
+	if( !missing(version) ) compareVersion(v, version)
+	else v
 }
 
 #' Accessing Octave Help and Documentation Pages
@@ -132,9 +139,12 @@ o_version <- function(){
 #' as R documentation file (default), e.g. using a pager, or only returned as a 
 #' single string. Note that when \code{show=TRUE}, the string is still returned 
 #' but invisibly.
-#' @param rd a logical that specifies if the result should be returned in a 
-#' suitable way for including in Rd files. If \code{TRUE}, it wraps the Octave 
-#' documentation string in Rd code that is rendered as in the Octave console.
+#' @param format a specification of the output format.
+#' If \code{TRUE} or \code{'rd'}, the result is Rd code that wraps the Octave documentation string 
+#' and is suitable for inclusion into Rd files.
+#' If one of the strings \code{'txt', 'latex'} or \code{'HTML'}, then the result is 
+#' formated using the corresponding Rd conversion function from the \pkg{tools} package 
+#' \code{\link{Rd2txt}}, \code{\link{Rd2latex}} or \code{\link{Rd2HTML}}.
 #' 
 #' @return this function is usually called for its side effect of printing the 
 #' help page on standard output (argument \code{show=TRUE}), but it invisibly
@@ -143,6 +153,7 @@ o_version <- function(){
 #' @templateVar name help
 #' @template OctaveDoc
 #' 
+#' @import tools
 #' @export
 #' @examples 
 #' 
@@ -161,13 +172,15 @@ o_version <- function(){
 #' 
 #' # to include in Rd files, use argument rd=TRUE in an \Sexpr:
 #' \dontrun{
-#'  \Sexpr[results=rd,stage=render]{RcppOctave::o_help(rand,rd=TRUE)}
+#'  \Sexpr[results=rd,stage=render]{RcppOctave::o_help(rand, format='rd')}
 #' }
 #' 
 #' # to see the included Rd code
-#' o_help(rand, rd=TRUE)
+#' o_help(rand, format=TRUE)
+#' o_help(rand, format='HTML')
+#' o_help(rand, format='latex')
 #' 
-o_help <- function(NAME, character.only = FALSE, show = interactive(), rd = FALSE){
+o_help <- function(NAME, character.only = FALSE, show = interactive(), format = c('plain', 'rd', 'txt', 'latex', 'HTML')){
 	
 	# substitute NAME
 	if( !character.only )
@@ -181,7 +194,9 @@ o_help <- function(NAME, character.only = FALSE, show = interactive(), rd = FALS
 	hlp <- .Call('oct_help', NAME, PACKAGE='RcppOctave')
 	#print(hlp)
 	
-	if( rd ){
+	if( isTRUE(format) ) format <- 'rd'
+	format <- match.arg(format)
+	if( format != 'plain' ){
 		# generate \Sexpr commands for each 
 #		sexpr <- paste("RcppOctave::o_help(", NAME, ", show=FALSE)", sep='')
 #		rdres <- paste(
@@ -191,10 +206,26 @@ o_help <- function(NAME, character.only = FALSE, show = interactive(), rd = FALS
 #		, sep='')
 		rdres <- paste(
 		"\\if{html}{\\out{<pre>", hlp, "</pre>}}\n"
-		, "\\if{text}{\\out{", hlp, "}}\n"
+		, "\\if{text}{\\preformatted{", hlp, "}}\n"
 		, "\\if{latex}{\\out{\\begin{verbatim}", hlp, "\\end{verbatim}}}\n"
 		, sep='')
-		return(rdres)
+
+		rdo <- c('txt', 'latex', 'HTML')
+		if( format=='rd' ) return(rdres)
+		else{
+			rdfun <- paste('Rd2', format, sep='')
+			rdfile <- tempfile("OctaveDoc", fileext=".Rd")
+			# write rd code
+			write(rdres, file=rdfile)
+			# convert in place to required format
+			formfile <- tempfile("OctaveDoc", fileext=paste(".", format, sep=''))
+			on.exit( unlink(formfile) )
+			do.call(rdfun, list(Rd=rdfile, out=formfile, fragment=TRUE))
+			formres <- paste(readLines(formfile), collapse="\n")
+			if( show ) file.show(formfile, title=, delete.file=TRUE)
+			return(invisible(formres))
+		}
+			
 	}
 		
 	if( show ){

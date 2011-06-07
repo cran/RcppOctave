@@ -57,8 +57,33 @@ o_completion_matches <- function(pattern = ""){
 	grep(pattern, .CallOctave('completion_matches', opattern), value=TRUE)	
 }
 
+#' Checking Octave Variables
+#' 
+#' Checks if an Octave object of a given name exists,
+#' using the Octave function \code{exist}.
+#'
+#' @templateVar name exist
+#' @template OctaveDoc
+#'
+#' @param NAME name to check existence.
+#' @param ... extra parameters passed to the Octave function 
+#' \code{exist}.
+#'
+#' @export  
 o_exist <- function(NAME, ...){
-	.CallOctave('exist', NAME, ...)
+
+	ecode <- .CallOctave('exist', NAME, ...)
+	if( !length(ecode) ){
+		stop("Unexpected empty result from Octave function 'exist' [Octave version: ", o_version(), "].")
+	}
+		
+	if( o_version("3.2.4") == 0 ){ # special handling in 3.2.4
+		if( ecode == 0 && NAME %in% o_completion_matches(NAME) ){
+			ecode <- 1
+		}
+	}
+	ecode
+	
 }
 
 #' @S3method .DollarNames Octave
@@ -77,6 +102,17 @@ setMethod('.DollarNames', 'Octave', .DollarNames.Octave)
 #' @seealso \code{\link{o_get}}
 #' @export
 setMethod('$', 'Octave', function(x, name)	o_get(name))
+
+#' The method \code{[[} provides an alternative way of retrieving Octave objects,
+#' and is equivalent to \code{o_get(name)}.
+#' 
+#' @param exact logical not used.
+#'  
+#' @rdname OctaveInterface
+#' @seealso \code{\link{o_get}}
+#' @export
+setMethod('[[', 'Octave', function(x, i, exact=TRUE)	o_get(i))
+
 
 #' The method \code{$<-} allow to directly assign/set Octave variables via e.g.
 #' \code{.O$a <- 10}. 

@@ -3,8 +3,6 @@
 %\VignetteDepends{knitr,bibtex}
 %\VignetteCompiler{knitr}
 
-\usepackage{Sweave}
-
 <<echo=FALSE, include=FALSE>>=
 pkg <- 'RcppOctave'
 require( pkg, character.only=TRUE )
@@ -329,6 +327,7 @@ embedded session:
 .O$myvar
 # remove 
 .O$myvar <- NULL
+# this should now throw an error since 'myvar' does not exist anymore
 .O$myvar
 @
 
@@ -348,7 +347,7 @@ variables, and called in subsequent statements:
 <<O_object_functions>>=
 # retrieve Octave function
 f <- .O$poisspdf
-show(f)
+f
 # call (in Octave)
 f(5, 2)
 @
@@ -404,7 +403,7 @@ o_get('xxxxx')
 o_get('aa')
 # get a function
 f <- o_get('svd')
-show(f)
+f
 @
 
 \subsubsection{Evaluate single statements}

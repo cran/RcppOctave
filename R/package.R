@@ -31,10 +31,11 @@
 #' .CallOctave('svd', matrix(1:9, 3))
 #' o_help('svd')
 #' 
-#' @useDynLib RcppOctave
 #' @import pkgmaker
 #' @seealso See \code{\link{.CallOctave}}, \code{\link{o_source}}, \code{\link{o_help}}
 NULL
+
+## #' @useDynLib RcppOctave
 
 #inlineCxxPlugin <- function (...) 
 #{
@@ -61,20 +62,33 @@ NULL
 #' OctaveConfig('lib')
 #' OctaveConfig('include')
 #' 
-OctaveConfig <- function(name, ..., reset=FALSE){
+OctaveConfig <- local({
+	# config cache
+	.OctaveConfig <- NULL
+	function(name, ..., reset=FALSE){
 	
 	# return the whole config list if no name is provided
-	if( missing(name) || reset ){
+	if( is.null(.OctaveConfig) || missing(name) || reset ){
 		# create the config list at first call
-		if( !exists('.OctaveConfig', packageEnv()) || reset ){
+		if( is.null(.OctaveConfig) || reset ){
 			conf <- list(lib=oconfig(c('LIBDIR', 'OCTLIBDIR'))
 						, include=oconfig(c('INCLUDEDIR', 'OCTINCLUDEDIR'))
 				)
 			
 			# add a configuration variable for the module path
 			conf$modules <- packagePath('modules')
+			if( pkgmaker::isDevNamespace() ){ # fix module path due changes in devtools compilation step
+				conf$modules <- file.path(tempdir(), packageName(), 'modules')
+				# create module directory
+				if( !file.exists(conf$modules) ){
+					message("Faking devtools compilation directory '", conf$modules, "'")					
+					dir.create(conf$modules, recursive=TRUE)
+					src <- packagePath('src/modules')
+					file.copy(file.path(src, c('PKG_ADD', list.files(src, pattern="*.oct$"))), conf$modules)
+				}				
+			} 
 			
-			assign('.OctaveConfig', conf, packageEnv())
+			.OctaveConfig <<- conf
 		}
 		
 		if( missing(name) ) return(.OctaveConfig)
@@ -82,7 +96,8 @@ OctaveConfig <- function(name, ..., reset=FALSE){
 		
 	settings <- .OctaveConfig[[name]]
 	file.path(settings, ...)
-}
+	}
+})
 
 # Load/Unload Octave Libraries
 #' @importFrom utils file_test
