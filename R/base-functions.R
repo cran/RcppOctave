@@ -146,18 +146,28 @@ o_version <- function(){
 #' @export
 #' @examples 
 #' 
+#' \dontshow{
+#' 	if( interactive() ){
+#' 		o_help <- function(..., show=FALSE){
+#' 			RcppOctave::o_help(..., show=show)
+#' 		}
+#' 	}
+#' }
+#' 
 #' o_help(print)
 #' o_help(rand)
 #' # or equivalently 
 #' o_help('rand')
 #' 
 #' # to include in Rd files, use argument rd=TRUE in an \Sexpr:
-#' # \Sexpr[results=rd,stage=render]{RcppOctave::o_help(rand,rd=TRUE)}
+#' \dontrun{
+#'  \Sexpr[results=rd,stage=render]{RcppOctave::o_help(rand,rd=TRUE)}
+#' }
 #' 
 #' # to see the included Rd code
 #' o_help(rand, rd=TRUE)
 #' 
-o_help <- function(NAME, character.only = FALSE, show = TRUE, rd = FALSE){
+o_help <- function(NAME, character.only = FALSE, show = interactive(), rd = FALSE){
 	
 	# substitute NAME
 	if( !character.only )
@@ -253,3 +263,39 @@ o_identity <- function(...){
 		.CallOctave('identity', dots[[1]])
 }
 
+#' \code{o_inpath} tells if a directory or files are in Octave path.
+#' 
+#' @rdname o_addpath
+#' @export
+#' @examples
+#' 
+#' o_addpath(tempdir())
+#' o_inpath(tempdir())
+#' o_inpath(tempfile())
+#'  
+o_inpath <- function(...){
+	p <- RcppOctave::.CallOctave('path')
+	p <- strsplit(p, ':')[[1]]
+	f <- file.path(...)
+	sapply(f, function(x){ any(sapply(file.path(p, x), file.exists)) | is.element(x, p)}) 
+}
+
+##' Installing An Octave Package
+##' 
+##' @param x path to a source package
+##' @param OPTIONS installation options
+##' 
+##' @templateVar name pkg
+##' @template OctaveDoc
+##' 
+##' @examples 
+##' \dontrun{
+##' o_install()
+##' }
+#o_install <- function(x, OPTIONS=NULL){
+#	if( !length(OPTIONS) )
+#		.CallOctave('pkg', 'install', x, argout=0)
+#	else
+#		.CallOctave('pkg', 'install', OPTIONS, x, argout=0)
+#	invisible()
+#}
