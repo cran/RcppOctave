@@ -1,4 +1,4 @@
-3e6b9a52da8b4f9b93cd492c91ce24c4 *DESCRIPTION
+e802e7e79b06c481eb115a55426bccc7 *DESCRIPTION
 744a727d833d4bfd98c2fa16d1b2d7c8 *NAMESPACE
 07119011f7eddcb923afc5ece142049a *R/Octave-class.R
 52279215b118fbba69dea234b7509b1e *R/OctaveFunction-class.R
@@ -8,10 +8,10 @@ f520e79beadaafb551543dbb7166cb05 *R/interface.R
 34a0f478b829e4ec699a90e8202e2107 *R/package.R
 f091dada127c25564fdb19a401622bc4 *R/random.R
 3224ad2c448bb101411c2e32c33cd801 *R/utils.R
-712a9b3de1d4ab53745e0495bc95d6f0 *build/RcppOctave.pdf
+58e19b7a18edad6a262970c8c4ccaa6f *build/RcppOctave.pdf
 08cd8f25d45bb6a0e4e23e7221a75aca *cleanup
-26e552abcc897899b46ceeeba74a68f7 *configure
-21727694e8cb707859e06cb1a1abfe02 *configure.in
+6be90bd3a6168a969e80b9409363a22d *configure
+c34fa69c836dbe82465fe81c7cc424fd *configure.in
 def7fe50ab71571d17a2286314695769 *demo/00Index
 0ebba0b9291ac35edb564f323d31132a *demo/Kalman.R
 eb0424d386db1eb2651a8a53b660362d *demo/gamma.R
@@ -63,10 +63,11 @@ a7bae951979a897e1023d539137e2415 *man/o_version.Rd
 1fe98295e2deeb9beb799a7a912c696e *man/octave-ll.Rd
 c50236dc1b59a525bbb67426c5395627 *man/show-commaOctave-method.Rd
 956d9f320d49eda1eae853fdb54877cb *man/sourceExamples.Rd
-42f08354b8bd21b61167f6aeab4a2194 *src/Makevars.in
-bfaeff58705c4488d27dd48b76adfeb4 *src/Makevars.win
+637dbef768a1b7a2c72151db7cd41aa0 *src/Makevars.in
+b5fd6c7a3fe71e861c9f5cf2585df0a4 *src/Makevars.win
 8c4f7dd87a8847d6468283271eb402a4 *src/conversion.cpp
-d7982ba6a187e38a62c01902c3b2f2d6 *src/modules/Makefile.in
+c249c059ad78c2f632516427654a0c2f *src/modules/Makefile
+b8c6845f843917f49adf94b74e496244 *src/modules/Makefile.in
 9417bbc4090ea7f40835c544a20cb7b8 *src/modules/PKG_ADD
 b3b9fcd0367d71fb1e53d36f0ad8536d *src/modules/Rrng.cc
 239f668b697eb1a66ed4004337e93b9c *src/modules/utils.cc
