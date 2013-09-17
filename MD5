@@ -1,4 +1,4 @@
-bfeff0324af57686e73d9dd0a0f93b3e *DESCRIPTION
+5144e13857623775655cd404f01a661b *DESCRIPTION
 f3cd46671ec2e6414f1d9b6a15aeb39c *NAMESPACE
 685477a87bce15581024bb20a58af136 *NEWS
 b0a847a0ecc01bc88dd6b36f5a93393b *R/Octave-class.R
@@ -10,11 +10,11 @@ b85295b0a5831648470a44a90a275775 *R/eval.R
 a4dd2ab5beec40682bc5065ea771d2b0 *R/random.R
 db47467ca1010456a520671c2cc6a631 *R/utils.R
 b3b3d5d4c1054f98e82f5285745f457b *README
-f9f8e8b7d5be875572d4e30da182b5c9 *build/RcppOctave.pdf
+77a30d7a9fa3d922d1ecbceb36decd20 *build/RcppOctave.pdf
 1ade6205435340cf0887a55e55144c70 *build/vignette.rds
 da0c050454acfa4fa146cb1417f1ffd0 *cleanup
-2c5796c04cd7f300082e2b659c405197 *configure
-a02f208818214f3f731f81f02874ee60 *configure.in
+4444c05693f368af3bfdb82d4b65ae40 *configure
+5b80490a6178d88f4a9af2eb8dc09d07 *configure.ac
 9e8c935d6f7a551f4c2ab53ece092e4e *configure.win
 def7fe50ab71571d17a2286314695769 *demo/00Index
 0ebba0b9291ac35edb564f323d31132a *demo/Kalman.R
@@ -24,11 +24,11 @@ aff61ca843d63b7831663c565cc371d3 *demo/timerng.R
 fe142fb17b19af687b6ba74cab78ccc2 *inst/REFERENCES.bib
 4a5e88de5de008abdf76444e244bda81 *inst/doc/EddelbuettelGaujoux.inc
 96e18977989547a8334ee3ec6232f8c9 *inst/doc/RcppOctave-unitTests.R
-09229c85bb3fdfaf3d93d4158ebd4f92 *inst/doc/RcppOctave-unitTests.Rnw
-ee7e9d1a97dea919a866d595e6ffe72b *inst/doc/RcppOctave-unitTests.pdf
+75fc137846845dcb2bea5b31c4216f80 *inst/doc/RcppOctave-unitTests.Rnw
+6f52ee2d446f2ae637ba5a23f3a4ec79 *inst/doc/RcppOctave-unitTests.pdf
 f385f0eae6b894dc6a41fc1c73551340 *inst/doc/RcppOctave.R
 6dd1eecb82d87ecd6ee196f971b272f2 *inst/doc/RcppOctave.Rnw
-f427f96d8de3c3db8cfd32fbcfcacfe9 *inst/doc/RcppOctave.pdf
+0862b7f0679eb4908197cc98b4bfe8d1 *inst/doc/RcppOctave.pdf
 d41d8cd98f00b204e9800998ecf8427e *inst/modules/README
 202fe017f72c09da9097f910458b6823 *inst/scripts/PKG_ADD
 c695104d2044f6f3c52677a2e2e4186b *inst/scripts/ex_functions.m
@@ -46,12 +46,12 @@ f375ef3b1cd21a34e3aeb74de091b96e *man/RcppOctave-package.Rd
 92f66780d74f57ef6e4c6989f200dbda *man/dot-CallOctave.Rd
 a3969d73d84d0347ed140fd01cddb72f *man/dot-DollarNames-commaOctave-method.Rd
 bb3507741796913a2cba93e85a774f06 *man/mfiles.Rd
-d79f8842454df302a483dd6c4c20e437 *man/o_addpath.Rd
-eaf55c6397cd816e43a746122c9f5eab *man/o_assign.Rd
+ffdcff3d7ff5a8f47eefcbaaed79b46e *man/o_addpath.Rd
+f7dde27cd00615a17a9fb822fec0b55f *man/o_assign.Rd
 a4bb9845c01551b3e561f4df49c17d09 *man/o_clear.Rd
 92c37438cd766d5e10a5e822f191c525 *man/o_eval.Rd
 368654340406cd83d3bec6fed898e7f9 *man/o_exist.Rd
-c052cf1bfc72e5bf74bb8387ded3adb6 *man/o_help.Rd
+80a7dd9d454472ae079e54eedecadf3a *man/o_help.Rd
 92f727bfd8855c701435703bc3952af4 *man/o_identity.Rd
 8b40167e1231596fcc216bd10ba81c7e *man/o_load.Rd
 141936288fe1e1e8aad1fc3d28ecb33e *man/o_ls.Rd
@@ -67,7 +67,7 @@ a7bae951979a897e1023d539137e2415 *man/o_version.Rd
 c50236dc1b59a525bbb67426c5395627 *man/show-commaOctave-method.Rd
 956d9f320d49eda1eae853fdb54877cb *man/sourceExamples.Rd
 a5847714b72de76cce3b376fbbca04ac *man/system.mfile.Rd
-c0ec015455c24b702f310db6a6c9a51c *src/Makevars.in
+f51f8e73b589c58308cc7d5fd5429b88 *src/Makevars.in
 684a1547e8ff2115e7c00ebd372085db *src/Makevars.win.in
 2ad5e3b7dcde77c278a5d73e132ddbd0 *src/Redirect.hpp
 96c73b99e47b3f8b23188446dc64e387 *src/conversion.cpp
@@ -78,5 +78,5 @@ c0ec015455c24b702f310db6a6c9a51c *src/Makevars.in
 4d0ef24115531128ba21b4d2410dfd87 *src/rcpp_octave.cpp
 e734a55a2a2ecbf8251ace94f1ea2c13 *src/rcpp_octave.h
 618c26676736daa5269b5cb1523b11ce *tests/doRUnit.R
-09229c85bb3fdfaf3d93d4158ebd4f92 *vignettes/RcppOctave-unitTests.Rnw
+75fc137846845dcb2bea5b31c4216f80 *vignettes/RcppOctave-unitTests.Rnw
 6dd1eecb82d87ecd6ee196f971b272f2 *vignettes/RcppOctave.Rnw
