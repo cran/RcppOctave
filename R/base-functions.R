@@ -102,6 +102,10 @@ o_addpath <- function(DIR1, ..., OPTION='-begin'){
 	invisible(.CallOctave('addpath', DIR1, ..., OPTION))
 }
 
+o_rmpath <- function(DIR1, ...){
+	invisible(.CallOctave('rmpath', DIR1, ...))
+}
+
 #' Get Octave Version
 #' 
 #' Returns the version of Octave currently used by \code{RcppOctave}.
@@ -111,7 +115,6 @@ o_addpath <- function(DIR1, ..., OPTION='-begin'){
 #' \code{\link[utils]{compareVersion}} if argument \code{version} is provided.
 #' 
 #' @export
-#' @importFrom utils compareVersion
 #' @examples
 #' 
 #' o_version()
@@ -306,7 +309,8 @@ o_identity <- function(...){
 #'  
 o_inpath <- function(...){
 	p <- RcppOctave::.CallOctave('path')
-	p <- strsplit(p, ':')[[1]]
+    sep <- RcppOctave::.CallOctave('pathsep')
+	p <- strsplit(p, sep)[[1]]
 	f <- file.path(...)
 	sapply(f, function(x){ any(sapply(file.path(p, x), file.exists)) | is.element(x, p)}) 
 }

@@ -1,8 +1,8 @@
-\name{mfiles}
-\alias{mfiles}
+\name{as.mfile}
+\alias{as.mfile}
 \title{M Files}
 \usage{
-  mfiles(..., pattern = "mfile_", dir = tempdir())
+  as.mfile(..., pattern = "mfile_", dir = tempdir())
 }
 \arguments{
   \item{...}{specification of a .m files as character
@@ -18,14 +18,24 @@
   initial part of the name.}
 }
 \description{
-  \code{mfiles} converts source code or .m filenames into
+  \code{as.mfile} converts source code or .m filenames into
   real paths to .m files that can be sourced with
   \code{\link[RcppOctave]{o_source}}.
 }
 \examples{
-cat('', file='test.m')
-f <- mfiles('test.m')
-f <- mfiles('test.m', '')
+f <- as.mfile('test.m')
+f
+
+# detected code elements are written into temporary files
+f <- as.mfile('test.m', "function [y] = myfun()
+y = 1;
+end
+")
+
+\dontrun{
+file.show(f[2])
+}
+
 # remove all files
 unlink(f)
 }

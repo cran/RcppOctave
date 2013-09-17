@@ -19,6 +19,7 @@
 */
 
 #include "rcpp_octave.h"
+#include "Redirect.hpp"
 
 // R includes
 #include <R.h>
@@ -26,13 +27,17 @@
 #include <R_ext/Rdynload.h>
 
 // Octave includes
+#include <octave/oct.h>
+#include <octave/octave.h>
 #include <octave/config.h>
 #include <octave/input.h>
 
 #include <octave/pt-all.h>
 #include <octave/symtab.h>
 #include <octave/parse.h>
+#if OCTAVE_API_VERSION_NUMBER < 45
 #include <octave/unwind-prot.h>
+#endif
 #include <octave/toplev.h>
 #include <octave/error.h>
 #include <octave/quit.h>
@@ -66,9 +71,14 @@ bool RCPP_OCTAVE_VERBOSE = false;
  * (source: http://shogun-toolbox.org/trac/browser/src/octave/)
  */
 
-octave_value octave_feval(const string& fname, const octave_value_list& args, int nres=-1, const std::vector<string>* output_names=NULL);
-inline octave_value octave_feval(const string& fname, const octave_value_list& args, const std::vector<string>& output_names){
-	return octave_feval(fname, args, output_names.size(), &output_names);
+
+octave_value octave_feval(const string& fname, const octave_value_list& args, int nres=-1
+						, const std::vector<string>* output_names=NULL
+						, int buffer = 3);
+inline octave_value octave_feval(const string& fname, const octave_value_list& args
+								, const std::vector<string>& output_names
+								, int buffer = 3){
+	return octave_feval(fname, args, output_names.size(), &output_names, buffer);
 }
 
 /**
@@ -81,22 +91,29 @@ SEXP octave_verbose(SEXP value){
 	return( Rcpp::wrap(res) );
 }
 
-bool octave_session(bool start=true){
+bool octave_session(bool start=true, bool with_warnings = true){
 
 	VERBOSE_LOG("Octave interpreter: %s\n", OCTAVE_INITIALIZED ? "on" : "off");
 	if( start && !OCTAVE_INITIALIZED ){
 		VERBOSE_LOG("Starting Octave interpreter\n");
 		// instantiate the Octave interpreter
 		int narg = 4;
-		string_vector argv(narg);
-		argv(0) = "Roctave";
-		argv(1) = "--quiet";
+		string_vector cmd_args(narg);
+		cmd_args(0) = std::string("RcppOctave");
+		cmd_args(1) = std::string("--quiet");
 		// Try avoid corruption of R console with Octave console outputs
 		// [suggested by Albert Graef]
-		argv(2) = "--no-line-editing";
-		argv(3) = "--no-history";
-		if( !octave_main(narg, argv.c_str_vec(), true /*embedded*/) )
-			Rf_error("Failed to start Octave interpreter");
+		cmd_args(2) = std::string("--no-line-editing");
+		cmd_args(3) = std::string("--no-history");
+
+		// redirect both stderr and stdout
+		Redirect redirect(3);
+
+		// try starting Octave
+		bool started_ok = octave_main(narg, cmd_args.c_str_vec(), true /*embedded*/);
+
+		redirect.flush(NULL, "Failed to start Octave interpreter", NULL
+							, !started_ok, with_warnings);
 
 		OCTAVE_INITIALIZED = true;
 		bind_internal_variable("crash_dumps_octave_core", false);
@@ -104,7 +121,7 @@ bool octave_session(bool start=true){
 	}
 	else if( !start && OCTAVE_INITIALIZED ){
 		if( RCPP_OCTAVE_VERBOSE )
-			Rprintf("Terminating Octave interpreter\n");
+			REprintf("Terminating Octave interpreter\n");
 		// terminate interpreter
 		do_octave_atexit();
 		OCTAVE_INITIALIZED = false;
@@ -114,11 +131,12 @@ bool octave_session(bool start=true){
 	return true;
 }
 
-SEXP octave_start(SEXP verbose){
+SEXP octave_start(SEXP verbose, SEXP with_warnings){
 
 	if( !Rf_isNull(verbose) )
 		RCPP_OCTAVE_VERBOSE = Rcpp::as<bool>(verbose);
-	return Rcpp::wrap(octave_session(true));
+	bool _warnings = Rcpp::as<bool>(with_warnings);
+	return Rcpp::wrap(octave_session(true, _warnings));
 }
 
 SEXP octave_end(){
@@ -128,7 +146,7 @@ SEXP octave_end(){
 void R_init_RcppOctave(DllInfo *info)
 {
 	/* Register routines, allocate resources. */
-	octave_start(R_NilValue);
+	octave_session(true, false);
 }
 
 void R_unload_RcppOctave(DllInfo *info)
@@ -167,22 +185,28 @@ extern void recover_from_exception(void)
 }
 
 typedef std::vector<string> std_vector;
-SEXP octave_feval(SEXP fname, SEXP args, SEXP output, SEXP unlist=R_NilValue){
+SEXP octave_feval(SEXP fname, SEXP args, SEXP output, SEXP unlist=R_NilValue, SEXP buffer = R_NilValue){
 
 	using namespace Rcpp;
 	BEGIN_RCPP
 
+	// unlist result?
 	bool do_unlist = Rf_isNull(unlist) ? true : as<bool>(unlist);
+	// buffer stdout/stderr?
+	int buffer_std = Rf_isNull(buffer) ? 3 : as<int>(buffer);
 
 	octave_value out;
 	if( TYPEOF(output) == STRSXP ){
 		out = octave_feval(Rcpp::as<string>(fname)
 						, Rcpp::as<octave_value_list>(args)
-						, Rcpp::as<std_vector>(output));
+						, Rcpp::as<std_vector>(output)
+						, buffer_std);
 	}else{
 		out = octave_feval(Rcpp::as<string>(fname)
 						, Rcpp::as<octave_value_list>(args)
-						, Rcpp::as<int>(output));
+						, Rcpp::as<int>(output)
+						, NULL
+						, buffer_std);
 	}
 
 	// special case of no result
@@ -215,12 +239,14 @@ SEXP octave_feval(SEXP fname, SEXP args, SEXP output, SEXP unlist=R_NilValue){
 			err << R_PACKAGE_NAME" - could not unlist the result of function `"
 					<< Rcpp::as<string>(fname).c_str()
 					<< "`: unsupported returned value type [" << out.type_name().c_str() << "].";
-			Rf_error(err.str().c_str());
+			throw std::string(err.str());
 		}
 	}
 
 	return Rcpp::wrap(out);
 
+	} catch ( const std::string& s){ // catch octave errors
+		Rf_error("%s", s.c_str());
 	END_RCPP
 }
 
@@ -283,7 +309,10 @@ int getOutnames(const string& fname, std::vector<string>& onames){
 #endif
 }
 
-octave_value octave_feval(const string& fname, const octave_value_list& args, int nres, const std::vector<string>* output_names) {
+
+octave_value octave_feval(const string& fname, const octave_value_list& args, int nres
+						, const std::vector<string>* output_names
+						, int buffer) {
 
 	VERBOSE_LOG("octave_feval - Calling Octave function `%s` with %i argument(s)\n", fname.c_str(), args.length());
 
@@ -309,6 +338,10 @@ octave_value octave_feval(const string& fname, const octave_value_list& args, in
 	can_interrupt = true;
 	octave_catch_interrupts();
 	octave_initialized = true;
+
+	// setup catching of stderr to use R stderr own functions
+	Redirect redirect;
+	//
 
 	try {
 
@@ -339,8 +372,13 @@ octave_value octave_feval(const string& fname, const octave_value_list& args, in
 		const std::vector<string>& onames = *output_names;
 
 		VERBOSE_LOG("octave_feval - Calling feval now ... ");
+		// catch stderr if requested
+		redirect.redirect( buffer );
 		octave_value_list out = feval(fname, args, nres);
 		if ( !error_state ){
+
+			redirect.flush();
+
 			VERBOSE_LOG("OK\noctave_feval - Result has %i elements\n", out.length());
 
 			// reduce the number of result elements if necessary
@@ -365,8 +403,8 @@ octave_value octave_feval(const string& fname, const octave_value_list& args, in
 				for (int i=0; i<n; ++i){
 					const string& s = onames[i];
 					VERBOSE_LOG(" '%s'", s.c_str());
-					if( s[0] == '\0' ){
-						Rf_error(R_PACKAGE_NAME"octave_feval - empty output name.");
+					if( s[0] == '\0' ){ // error
+						RcppOctave_error(fname, "error in parsing result: empty output name.");
 					}
 					m.assign(s, out(i));
 				}
@@ -379,16 +417,16 @@ octave_value octave_feval(const string& fname, const octave_value_list& args, in
 		}
 
 	} catch	(octave_interrupt_exception){
-		Rprintf(R_PACKAGE_NAME" - Caught Octave exception: interrupt\n");
+		REprintf(R_PACKAGE_NAME" - Caught Octave exception: interrupt\n");
 		recover_from_exception();
-		Rprintf("\n");
+		REprintf("\n");
 		//error_state = -2;
 	}
 	catch (std::bad_alloc)
 	{
-		Rprintf(R_PACKAGE_NAME" - Caught Octave exception: bad_alloc\n");
+		REprintf(R_PACKAGE_NAME" - Caught Octave exception: bad_alloc\n");
 		recover_from_exception();
-		Rprintf("\n");
+		REprintf("\n");
 		//error_state = -3;
 	}
 
@@ -398,50 +436,11 @@ octave_value octave_feval(const string& fname, const octave_value_list& args, in
 
 	// throw an R error
 	std::ostringstream err;
-	err << R_PACKAGE_NAME" - error in Octave function `" << fname.c_str() << "`.";
-	Rf_error(err.str().c_str());
+	err << R_PACKAGE_NAME" - error in Octave function `" << fname.c_str() << "`";
+	redirect.flush(NULL, err.str().c_str(), NULL, true);
 
 	return octave_value_list();
 }
-
-/**
- * Output redirection class
- */
-class Redirect{
-
-public:
-
-//	struct nullstream : ofstream {
-//		nullstream() : ofstream( MSWIN_ALT("/dev/null", "NUL") ) { }
-//	};
-
-private:
-
-	/** NULL stream to sink output */
-//	nullstream _nulldev;
-
-	/** backup stream of standard cout to restore stream when finished */
-	streambuf* _cout_bkp;
-
-public:
-
-	Redirect(ostream& out){
-		// save output buffer of the stream
-		_cout_bkp = cout.rdbuf();
-		// redirect std ouput into the logfile
-		cout.rdbuf(out.rdbuf());
-	}
-//	Redirect(streambuf* out=NULL){
-//		// save output buffer of the stream
-//		_cout_bkp = cout.rdbuf();
-//		// redirect std ouput into the logfile
-//		cout.rdbuf(out == NULL ? _nulldev.rdbuf() : out);
-//	}
-	virtual ~Redirect(){
-		// restore old output buffer
-		cout.rdbuf(_cout_bkp);
-	}
-};
 
 /** Returns the help string from an Octave object. */
 SEXP oct_help(SEXP name){
@@ -454,10 +453,9 @@ SEXP oct_help(SEXP name){
 
 #if OCT_POST_3_4_0 < 0 // prior to 3.4.0: help directly prints out the documentation
 	// redirect std::out
-	ostringstream res;
-	Redirect red(res);
+	Redirect redirect(1);
 	octave_value ores = octave_feval(wrap("help"), wrap(args), wrap(0));
-	return( wrap(res.str()) );
+	return( wrap(redirect._cout.str()) );
 #else
 	return( octave_feval(wrap("help"), wrap(args), wrap(1)) );
 #endif

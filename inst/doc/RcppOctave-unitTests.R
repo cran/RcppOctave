@@ -1,8 +1,5 @@
-### R code from vignette source 'RcppOctave-unitTests.Rnw'
 
-###################################################
-### code chunk number 1: RcppOctave-unitTests.Rnw:10-15
-###################################################
+## ----setup, include=FALSE------------------------------------------------
 pkg <- 'RcppOctave'
 require( pkg, character.only=TRUE )
 prettyVersion <- packageDescription(pkg)$Version
