@@ -188,6 +188,15 @@ o_ls()
 ## o_doc(poisson)
 
 
+## ----errors, try = TRUE--------------------------------------------------
+# error
+res <- try(.CallOctave('error', 'this is an error in Octave'))
+geterrmessage()
+
+# warning
+res <- .CallOctave('warning', 'this is a warning in Octave')
+
+
 ## ----sample_svd----------------------------------------------------------
 
 o_svd <- function(x){

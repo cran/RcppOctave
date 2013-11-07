@@ -1,37 +1,31 @@
 Package: RcppOctave
 Type: Package
 Title: Seamless Interface to Octave -- and Matlab
-Version: 0.11.3
-Date: 2013-09-17
-Authors@R: c( person("Renaud", "Gaujoux", role=c("aut", "cre"),
-    email="renaud@tx.technion.ac.il"), person("Dirk", "Eddelbuettel",
-    role="ctb", comment="Helped with configure and Rcpp"), person("Dominick",
-    "Samperi", role="ctb", comment="Helped with Windows/Mac port"))
+Version: 0.14.1
+Date: 2013-11-07
+Author: Renaud Gaujoux
+Maintainer: Renaud Gaujoux <renaud@tx.technion.ac.il>
 Description: Direct interface to Octave. The primary goal is to facilitate the
     port of Matlab/Octave scripts to R. The package enables to call any Octave
     functions from R and as well as browsing their documentation, passing
     variables between R and Octave, using R core RNGs in Octave, which ensures
     that stochastic computations are also reproducible.
 License: GPL (>= 2)
-URL: http://renozao.github.io/RcppOctave/current,
-        http://github.com/renozao/RcppOctave,
-        http://r-forge.r-project.org/projects/rcppoctave/
+URL: http://renozao.github.io/RcppOctave
 BugReports: http://github.com/renozao/RcppOctave/issues
+SCM: github:renozao, r-forge
 LazyLoad: yes
 SystemRequirements: Octave (>= 3.2.4) and its development files
 Depends: R (>= 3.0.0), methods, utils, stats, Rcpp (>= 0.10.1),
-        pkgmaker (>= 0.17)
+        pkgmaker (>= 0.20)
 Imports: digest, stringr, tools
 Suggests: RUnit, knitr, bibtex
 LinkingTo: Rcpp
 Collate: 'utils.R' 'package.R' 'interface.R' 'Octave-class.R'
         'OctaveFunction-class.R' 'base-functions.R' 'eval.R' 'random.R'
+        'config-vars.R' 'config.R'
 VignetteBuilder: knitr
-Packaged: 2013-10-29 08:30:35 UTC; renaud
-Author: Renaud Gaujoux [aut, cre],
-  Dirk Eddelbuettel [ctb] (Helped with configure and Rcpp),
-  Dominick Samperi [ctb] (Helped with Windows/Mac port)
-Maintainer: Renaud Gaujoux <renaud@tx.technion.ac.il>
+Packaged: 2014-03-10 09:29:58 UTC; renaud
 NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2013-10-29 15:38:57
+Date/Publication: 2014-03-10 17:14:05
