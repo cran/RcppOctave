@@ -28,7 +28,11 @@ class Octave_Rstreambuf : public Rcpp::Rstreambuf<OUTPUT> {
 			_usages.str(std::string());
 		}
 
-		void send_to_R(const char* head = NULL, bool stop = false, bool warn = true);
+		void send_to_R(const char* head = NULL, bool stop = false, int warn = 1);
+
+		std::string str() const{
+			return _output.str();
+		}
 
 	protected:
 		virtual std::streamsize xsputn(const char *s, std::streamsize n );
@@ -44,7 +48,7 @@ class Octave_Rstreambuf : public Rcpp::Rstreambuf<OUTPUT> {
 		}
 };
 
-template <> inline void Octave_Rstreambuf<true>::send_to_R(const char* head, bool stop, bool warn){
+template <> inline void Octave_Rstreambuf<true>::send_to_R(const char* head, bool stop, int warn){
 
 	// Output: write to R stdout
 	std::string buf_msg = _output.str();
@@ -56,7 +60,7 @@ template <> inline void Octave_Rstreambuf<true>::send_to_R(const char* head, boo
 	}
 }
 
-template <> inline void Octave_Rstreambuf<false>::send_to_R(const char* head, bool stop, bool warn){
+template <> inline void Octave_Rstreambuf<false>::send_to_R(const char* head, bool stop, int warn){
 
 	// flush usage: in errors if in stop mode
 	dump_usage(stop);
@@ -86,6 +90,7 @@ template <> inline void Octave_Rstreambuf<false>::send_to_R(const char* head, bo
 		_errors.str(std::string());
 		// throw an exception not Rf_error
 		// See: http://lists.r-forge.r-project.org/pipermail/rcpp-devel/2010-May/000651.html
+		if( warn == 2 ) REprintf("%s\n", omsg.str().c_str());
 		throw std::string(omsg.str());
 	}
 
@@ -157,6 +162,10 @@ public:
 	Buffer* Rrdbuf(){
 		return static_cast<Buffer*>( rdbuf() );
 	}
+
+	std::string str() const{
+		return buf->str();
+	}
 };
 
 
@@ -204,7 +213,7 @@ public:
 
 	}
 
-	void flush(const char* head = NULL, bool stop = false, bool warn = true){
+	void flush(const char* head = NULL, bool stop = false, int warn = 1){
 		// stdout
 		_cout.Rrdbuf()->send_to_R();
 		// stderr
