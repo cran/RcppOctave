@@ -1,4 +1,22 @@
 ********************
+Changes in 0.18
+********************
+FIXES
+	o Fixed installation problem on Windows for R >= 3.2, due to 
+	toolchain incompatiblity. Now requires that the 4.9.2 toolchain
+	available from CRAN is located under the Rtools directory. 
+
+********************
+Changes in 0.16
+********************
+NEW FEATURES
+    o Added Octave function randp for Poisson distribution (issue #8)
+FIXES
+    o Fixed compatibility bug with Octave 4.0.0. See ?o_config_info (issue #5).
+    o Added configure option --diable-rprofile to disable loading in internal 
+    R calls during installation (issue #6)   
+
+********************
 Changes in 0.14.5
 ********************
 FIXES

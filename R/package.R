@@ -124,21 +124,50 @@ NULL
 #	}
 #})
 
+.debug <- function(...){
+    if( any(!is.na(Sys.getenv(c('R_RCPPOCTAVE_VERBOSE', 'R_RCPPOCTAVE_DEBUG'), unset = NA))) ){ 
+        message(...)
+        TRUE
+    }else FALSE
+}
+
+.load.lib <- function(libfile = NULL, pkgname, libname){
+    
+    lib_str <- 'RcppOctave library'
+    if( !is.null(libfile) ) lib_str <- libfile
+    
+    if( .debug("  - Loading ", lib_str, " ... ", appendLF = FALSE) ){
+        on.exit( .debug('ERROR') )
+    }
+    # load compiled library normally or in devmode
+    res <- if( !is.null(libfile) ) dyn.load(libfile)
+            else if( !isDevNamespace() ) library.dynam(pkgname, pkgname, libname)
+        	else dyn.load(packagePath('src', paste0(pkgname, .Platform$dynlib.ext)))
+    
+    if( .debug('OK [', res[['path']], ']') ) on.exit()
+    TRUE
+}
+
 # Load/Unload Octave Libraries
 .OctaveLibs <- function(pkgname, libname){
-    		
-    .load <- function(){
-        # load compiled library normally or in devmode
-    	if( !isDevNamespace() ) library.dynam(pkgname, pkgname, libname)
-    	else dyn.load(packagePath('src', paste0(pkgname, .Platform$dynlib.ext)))
+    
+    .load <- function(libfile = NULL){
+        .load.lib(libfile, pkgname, libname)
     }
     
     .load_dep <- function( libdir = Octave.config[['libdir']] ){
-        if( is.Mac() && !file.exists(dlibs <- file.path(libdir, paste0(Octave.config[['libs']], .Platform$dynlib.ext))) ){
+        octlibs <- Octave.config[['libs']]
+        dlibs <- file.first.path(libdir, paste0(octlibs, .Platform$dynlib.ext))
+        if( length(notfound <- which(is.na(dlibs))) && is.Mac() ){
             # on Mac look for .dylib if default .so does not exist
-            dlibs <- file.path(libdir, paste0(Octave.config[['libs']], ".dylib"))
+            dlibs[notfound] <- file.first.path(libdir, paste0(octlibs[notfound], ".dylib"))
+            notfound <- which(is.na(dlibs))
         }
-        sapply(dlibs, dyn.load)
+		if( length(notfound) ){
+			warning("RcppOctave - Could not find library ", paste0(octlibs[notfound], collapse = ','))
+			dlibs <- dlibs[-notfound]
+		}
+        sapply(dlibs, .load)
     }
     
     dlls <- base::getLoadedDLLs()
@@ -147,12 +176,14 @@ NULL
     
     # custom installation
     if( isTRUE(Octave.config[['customed']]) ){
+        .debug("* Explicit loading from custom location:")
         .load_dep()
         .load()
         return(TRUE)
     }
     
     # try directly loading the library
+    .debug("* Try direct loading:")
     if( !is(try(.load(), silent = TRUE), 'try-error') ) return(TRUE)
     
     # check Octave configuration is reachable
@@ -161,14 +192,19 @@ NULL
     }
     
     # setup path restoration for .onUnload
+    .debug("* Expanding PATH with Octave lib directories:")
     on.exit( Sys.path$commit(), add = TRUE)
     Sys.path$append(octave_bindir)
     Sys.path$append(octave_config('OCTLIBDIR', mustWork = FALSE))
+    Sys.path$append(octave_config('LIBDIR', exec = 'mkoctfile', mustWork = FALSE))
+    .debug("  - ", Sys.path$get())
     
     # try reload
+    .debug("* Re-try direct loading")
     if( !is(try(.load(), silent = TRUE), 'try-error') ) return(TRUE)
     
     # final try, pre-loading custom dependencies if necessary
+    .debug("* Try excplicit loading:")
     .load_dep()
     .load()
     
@@ -220,10 +256,65 @@ NULL
             })
 }
 
+#' Platform Compatibility Check for RcppOctave
+#' 
+#' Checks if the current platform supports RcppOctave.
+#' 
+#' The following checks are performed:
+#' \itemize{
+#' \item platform must be either non-Windows or Windows-i386;  
+#' \item The Octave version to be loaded is the same one as the one against
+#' which RcppOctave libraries and modules were compiled.
+#' }
+#' 
+#' @param details logical that indicates if the checks' details should be 
+#' returned as well, in which case, the result is a list. 
+#' 
+#' @export
+.isPlatformCompatible <- function(details = FALSE){
+    
+    res <- list(ok = TRUE, os.ok = TRUE, msg = NULL)
+    .result <- function(res){
+        if( details ) res
+        else res[['ok']]
+    }
+    # check compatibility of OS
+    res$os.ok <- .Platform$OS.type != 'windows' || .Platform$r_arch != 'x64'
+    res$ok <- res$os.ok
+
+    if( !res$ok && details ){
+        pversion <- utils::packageVersion('RcppOctave')
+        res$msg <- sprintf("RcppOctave [%s] - R platform %s is not supported", pversion, R.version$platform)
+    }
+    
+    if( !res$ok ) return( .result(res) )
+    
+    # check compatibility of Octave compilation and loading version
+    v <- octave_config('VERSION')
+    v0 <- Octave.version[['version']]
+    res$ok <- res$ok && utils::compareVersion(v0, v) == 0
+    
+    if( !res$ok && details ){
+        res$msg <- c(res$msg, sprintf("RcppOctave was built against Octave %s, but loaded with Octave %s", v0, v))
+    } 
+    res$msg <- paste("NOTE:", res$msg, collapse = "\n")
+    
+    .result(res)
+}
+
 .onLoad <- function(libname, pkgname){
 
-    # setup finalizer
+    # skip initialisation if not compatible platform
+    compat <- .isPlatformCompatible(details = TRUE)
+    if( !compat$ok ){
+        .m <- message
+        .m(compat$msg)
+        # the library should load fine if the OS is not compatible 
+        if( !compat$os.ok ) .load.lib(pkgname = pkgname, libname = libname)
+        return()
+    }
     
+    # setup finalizer
     reg.finalizer(.octave_end_trigger, .terminate_octave, TRUE)
     
     # save initial PATH state to enable restoration in .onUnload
@@ -242,19 +333,27 @@ NULL
 .splash_message <- function(){
     
     pversion <- utils::packageVersion('RcppOctave')
-    if( is.null(octave_bindir <- octave_config('BINDIR', mustWork = FALSE)) ){
+    
+    compat <- .isPlatformCompatible(details = TRUE) 
+    if( !compat$ok ){
+        msg <- compat$msg
+        packageStartupMessage(msg)
+        if( interactive() ) warning(msg)
+    
+    }else if( is.null(octave_bindir <- octave_config('BINDIR', mustWork = FALSE)) ){
         packageStartupMessage("RcppOctave [", pversion, "] - Octave (not configured)"
                 , "\nNOTE: Octave binaries were probably not found. See ?octave_config.")
     }else{
         # display info about config
-        packageStartupMessage("RcppOctave [", pversion, "] - "
-                , o_version()
-                , "\nOctave path: ", Octave.home('bin'))
+        packageStartupMessage(sprintf("RcppOctave %s [Octave %s - path: %s]", pversion, o_version(), Octave.home('bin')))
     }
 }
 
 .onUnload <- function(libpath) {
 	
+    # skip cleanup if platform is not compatible
+    if( !.isPlatformCompatible() ) return()
+    
     # cleanup path on exit
     on.exit( Sys.path$revert("Reverting Octave changes to system PATH") )
     
